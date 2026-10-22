@@ -9,7 +9,8 @@ add_compile_options(
 add_subdirectory(helloTile)
 add_subdirectory(tileVectorAdd)
 add_subdirectory(tileTranspose)
-add_subdirectory(tileMatmulAutotuner)
+# CUDA 12.8 does not provide tileiras, so skip this sample.
+# add_subdirectory(tileMatmulAutotuner)
 add_subdirectory(tileMatmul)
 add_subdirectory(tileBmm)
 add_subdirectory(tileLayerNorm)
