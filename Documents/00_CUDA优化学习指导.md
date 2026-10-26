@@ -187,7 +187,7 @@ Nsight Compute 分析热点 kernel
 以下是建议的必做主线，直接对应前面的精简路线。每项都按“先运行原版并确认正确 → 记录基线 → 做一个小改动 → 重测并解释结果”完成；不要一次同时改多个因素。
 
 1. **确认设备与基线**：运行 `deviceQuery`，记录 GPU、Compute Capability 和驱动信息；运行 `bandwidthTest`，记录 Host↔Device 带宽。
-2. **理解并测量基础 Kernel**：阅读并运行 `vectorAdd`；分别测数据分配、拷贝、kernel 和端到端耗时，改变输入规模，观察耗时变化。
+2. **理解基础 Kernel**：阅读并运行 `vectorAdd`，确认结果正确；理解 Host/Device 数据分配与拷贝、Kernel 启动和结果校验流程。该示例不包含耗时测量，本任务不要求分别测分配、拷贝、Kernel 或端到端耗时，也不要求改变输入规模观察耗时变化。性能测量放在后续对应的性能分析任务中进行。
 3. **理解异步与并发**：运行 `asyncAPI` 和 `simpleStreams`；比较同步执行与异步拷贝/多 Stream 执行，确认是否实现真实重叠，而不只看 API 是否异步。
 4. **优化访存**：运行 `transpose`；先记录原始实现性能，再调整 tile/block 或访存实现，用 Nsight Compute 检查合并访存、DRAM 吞吐和 bank conflict。
 5. **学习并行归约**：运行 `reduction`；比较不同输入规模下的正确性和吞吐，观察线程组织、访存与同步对结果的影响。
