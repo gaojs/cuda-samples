@@ -39,19 +39,22 @@ Pinned memory，也称 page-locked host memory（页锁定主机内存），是�
 
 ## 4. 带宽基线
 
-| 传输方向 | 测试内存类型 | 测试大小 | 实测带宽 |
-|---|---|---:|---:|
-| Host → Device | Pinned | 32,000,000 Bytes | 25.4 GB/s |
-| Device → Host | Pinned | 32,000,000 Bytes | 13.6 GB/s |
-| Device → Device | GPU 内存拷贝 | 32,000,000 Bytes | 3311.6 GB/s |
+先前单次记录为 H2D 25.4 GB/s、D2H 13.6 GB/s、D2D 3311.6 GB/s。为判断 D2H 偏低是否稳定，在同一环境下连续运行 `bandwidthTest` Quick Mode 10 次；每次传输大小为 32,000,000 Bytes、Pinned Memory，且 10 次均 `PASS`。
 
-这是 CUDA Samples `bandwidthTest` 的快速单次基线，不能直接等同于理论峰值或应用实际吞吐。尤其 Host↔Device 结果受主机内存、PCIe 链路、虚拟化/容器环境及系统负载影响；Device↔Device 结果是该 Sample 的测量值，也不代表任意 Kernel 的有效显存带宽。
+| 方向 | 10 次结果（GB/s） | 中位数 | 范围 |
+|---|---|---:|---:|
+| H2D | 25.9, 25.8, 25.8, 25.8, 25.8, 25.9, 25.9, 25.5, 25.9, 25.7 | 25.8 | 25.5–25.9 |
+| D2H | 13.3, 13.3, 13.3, 13.5, 22.7, 13.2, 13.3, 13.5, 13.2, 13.2 | 13.3 | 13.2–22.7 |
+| D2D | 3167.5, 3306.2, 3315.3, 3444.8, 3288.5, 3437.8, 3467.0, 3313.1, 3444.4, 3294.1 | 3314.2 | 3167.5–3467.0 |
+
+D2H 有一次 22.7 GB/s，其余 9 次为 13.2–13.5 GB/s。因此本轮重复测试中，D2H 并未稳定接近 H2D；这组短测显示存在明显波动/两簇结果。十次样本不足以确定其根因，且 `bandwidthTest` Quick Mode 不是专业性能测量工具。先前用户提供的另两次 D2H 结果为 24.9 和 25.1 GB/s，进一步说明单次读数可能变化。当前应分别保留原始读数与中位数，不将 D2H 约为 H2D 一半解释为普遍硬件规律，也不据此断言硬件异常。
+
+这只是特定环境、Pinned Memory、32 MB 传输和 Quick Mode 下的实测基线，不等同于理论峰值或应用实际吞吐。Host↔Device 受主机内存、PCIe/互连、虚拟化/容器和系统负载影响；D2D 不经过主机 RAM 和 PCIe 主机链路，主要利用 GPU 显存子系统，因此显著更快是正常的。本次 D2D 中位数约为 H2D 中位数的 128 倍，但不代表任意 Kernel 都能达到该显存带宽。
 
 ### H2D、D2H 与 D2D 的差异
 
-- **H2D（Host to Device）和 D2H（Device to Host）**：数据在主机 RAM 与 GPU 显存之间传输，通常受 PCIe/互连链路、主机内存子系统及驱动/测试方式共同限制。两种方向的理论能力不应简单假定相等，但 CUDA 也没有“D2H 必定只有 H2D 一半”的通用规律。
-- **本次 H2D 25.4 GB/s、D2H 13.6 GB/s**：D2H 约为 H2D 的 54%，是当前机器在 `bandwidthTest` Quick Mode、32 MB pinned 测试下的一次实测差异，不应推广成常识或据此直接判断硬件故障。要判断是否稳定，应在相同条件下重复、多次交换测试顺序，并检查 PCIe 链路与系统负载。
-- **D2D（Device to Device）**：数据在 GPU 内存间复制，不经主机 RAM 和 PCIe 主机链路，主要利用 GPU 的显存子系统，因此速度显著高于 H2D/D2H 是正常的。本次 3311.6 GB/s 约为 H2D 的 130 倍；该数值是此 Sample 测量到的设备内复制吞吐，不代表任意 Kernel 都能达到的显存带宽，也不能直接视为应用有效吞吐。
+- **H2D（Host to Device）和 D2H（Device to Host）**：数据在主机 RAM 与 GPU 显存之间传输，通常受 PCIe/互连链路、主机内存子系统及驱动/测试方式共同限制。两种方向的实际测量值可能不相等，但 CUDA 没有“D2H 必定只有 H2D 一半”的通用规律。
+- **D2D（Device to Device）**：数据在 GPU 内存间复制，不经主机 RAM 和 PCIe 主机链路，主要利用 GPU 的显存子系统。此 Sample 的 D2D 结果是设备内复制吞吐，不是任意 Kernel 的有效显存带宽。
 
 ## 5. 对后续优化的使用方式
 
@@ -60,7 +63,7 @@ Pinned memory，也称 page-locked host memory（页锁定主机内存），是�
 3. 同时区分端到端时间、Host↔Device 拷贝时间和 Kernel 时间；若传输占比高，再检查页锁定内存、异步拷贝及计算/传输重叠。
 4. CUDA Samples 自身提示其示例并非专业性能测量工具，结果可能随 GPU Boost 变化。正式分析可结合 CUDA Events、Nsight Systems 和 Nsight Compute。
 
-## 5. 原始结果摘要
+## 6. 原始结果摘要
 
 ### deviceQuery
 
