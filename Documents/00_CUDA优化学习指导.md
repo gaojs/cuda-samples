@@ -5,13 +5,17 @@
 ## 1. 总体学习路线
 
 ```text
-deviceQuery / bandwidthTest
+deviceQuery
   ↓
-vectorAdd / asyncAPI / simpleStreams
+bandwidthTest
   ↓
-matrixMul / matrixMulCUBLAS
+vectorAdd
+  ↓
+asyncAPI / simpleStreams
   ↓
 transpose / alignedTypes
+  ↓
+matrixMul / matrixMulCUBLAS
   ↓
 reduction / scan / histogram
   ↓
@@ -33,42 +37,45 @@ GEMM 或自己的实际项目
 
 以下每个主题只保留 1–2 个代表性 Sample，避免把 CUDA Samples 当成必须逐个通关的清单。必做项放在第 10 节“推荐动手任务”；本节其他示例是按需查阅，不要求全部学习。
 
-### 2.1 设备与基础 Kernel
+### 2.1 设备信息
 
 - `Samples/1_Utilities/deviceQuery`：了解 GPU 型号、Compute Capability 和设备限制。
-- `Samples/0_Introduction/vectorAdd`：掌握线程索引、内存分配/拷贝、kernel 启动与结果校验。
 
-### 2.2 数据传输与异步执行
+### 2.2 传输基线
 
 - `Samples/1_Utilities/bandwidthTest`：测量 Host↔Device 带宽，判断传输是否可能成为瓶颈。
+
+### 2.3 基础 Kernel
+
+- `Samples/0_Introduction/vectorAdd`：掌握线程索引、内存分配/拷贝、kernel 启动与结果校验。
+
+### 2.4 异步执行与并发
+
 - `Samples/0_Introduction/asyncAPI`：学习异步拷贝、CUDA Events 和 CPU/GPU 工作重叠。
-
-### 2.3 并发与任务提交
-
 - `Samples/0_Introduction/simpleStreams`：理解 Stream 顺序和拷贝/计算重叠。
 - `Samples/3_CUDA_Features/simpleCudaGraphs`：学习 Graph 捕获、实例化和重复执行，判断是否能降低短任务的 CPU 提交开销。
 
-### 2.4 访存优化
+### 2.5 访存优化
 
 - `Samples/6_Performance/transpose`：观察合并访存、shared memory 和 bank conflict。
 - `Samples/6_Performance/alignedTypes`：了解数据对齐对访存效率的影响；作为选修对照。
-
-### 2.5 并行算法与同步
-
-- `Samples/2_Concepts_and_Techniques/reduction`：理解并行归约、warp/block 协作及访存效率。
-- `Samples/2_Concepts_and_Techniques/histogram`：观察原子竞争与并行计数；遇到原子冲突优化时再学。
 
 ### 2.6 计算优化与库对照
 
 - `Samples/0_Introduction/matrixMul`：教学版矩阵乘法，学习 tiling、数据复用和 shared memory。
 - `Samples/4_CUDA_Libraries/matrixMulCUBLAS`：与成熟库实现对照。实际项目通常优先评估 cuBLAS/cuBLASLt，而不是从零维护通用 GEMM。
 
-### 2.7 精度与 Tensor Core（有矩阵计算需求时）
+### 2.7 并行算法与同步
+
+- `Samples/2_Concepts_and_Techniques/reduction`：理解并行归约、warp/block 协作及访存效率。
+- `Samples/2_Concepts_and_Techniques/histogram`：观察原子竞争与并行计数；遇到原子冲突优化时再学。
+
+### 2.8 精度与 Tensor Core（有矩阵计算需求时）
 
 - `Samples/3_CUDA_Features/tf32TensorCoreGemm`：观察 Tensor Core 路径及精度/吞吐权衡。
 - `Samples/0_Introduction/fp16ScalarProduct`：作为低精度数据类型的入门补充。
 
-### 2.8 进阶主题（按项目需要选学）
+### 2.9 进阶主题（按项目需要选学）
 
 - 统一内存：`Samples/6_Performance/UnifiedMemoryPerf`。
 - 多 GPU/P2P：`Samples/0_Introduction/simpleP2P` 或 `Samples/5_Domain_Specific/p2pBandwidthLatencyTest`。
@@ -101,17 +108,17 @@ GEMM 或自己的实际项目
 
 先区分端到端耗时、Host/Device 拷贝耗时和 kernel 耗时。小输入时，launch 和传输开销可能超过计算本身。
 
+### transpose 与 alignedTypes
+
+- `Samples/6_Performance/transpose`：比较矩阵转置中的访存方式，重点观察合并访问、shared memory 和 bank conflict。
+- `Samples/6_Performance/alignedTypes`：比较对齐与未对齐数据布局的访问吞吐。
+
 ### matrixMul 与 matrixMulCUBLAS
 
 - `Samples/0_Introduction/matrixMul`：教学实现，适合观察二维线程块、tiling、shared memory 和合并访存；其目标是讲解 CUDA 原理，并非通用最高性能 GEMM。
 - `Samples/4_CUDA_Libraries/matrixMulCUBLAS`：对照使用 cuBLAS 的矩阵乘法。
 
 学习手写 GEMM 的 tile、数据复用和资源权衡；实际应用优先评估 cuBLAS/cuBLASLt 等成熟库。
-
-### transpose 与 alignedTypes
-
-- `Samples/6_Performance/transpose`：比较矩阵转置中的访存方式，重点观察合并访问、shared memory 和 bank conflict。
-- `Samples/6_Performance/alignedTypes`：比较对齐与未对齐数据布局的访问吞吐。
 
 可以改变 tile/block 配置并用 Nsight Compute 检查 DRAM 吞吐、缓存行为和访存效率。
 
@@ -190,8 +197,8 @@ Nsight Compute 分析热点 kernel
 2. **理解基础 Kernel**：阅读并运行 `vectorAdd`，确认结果正确；理解 Host/Device 数据分配与拷贝、Kernel 启动和结果校验流程。该示例不包含耗时测量，本任务不要求分别测分配、拷贝、Kernel 或端到端耗时，也不要求改变输入规模观察耗时变化。性能测量放在后续对应的性能分析任务中进行。
 3. **理解异步与并发**：运行 `asyncAPI` 和 `simpleStreams`；比较同步执行与异步拷贝/多 Stream 执行，确认是否实现真实重叠，而不只看 API 是否异步。
 4. **优化访存**：运行 `transpose`；先记录原始实现性能，再调整 tile/block 或访存实现，用 Nsight Compute 检查合并访存、DRAM 吞吐和 bank conflict。
-5. **学习并行归约**：运行 `reduction`；比较不同输入规模下的正确性和吞吐，观察线程组织、访存与同步对结果的影响。
-6. **从教学实现到库实现**：对比 `matrixMul` 与 `matrixMulCUBLAS`；使用相同输入规模和精度记录耗时，并检查数值误差。实际应用优先考虑成熟库。
+5. **从教学实现到库实现**：对比 `matrixMul` 与 `matrixMulCUBLAS`；使用相同输入规模和精度记录耗时，并检查数值误差。实际应用优先考虑成熟库。
+6. **学习并行归约**：运行 `reduction`；比较不同输入规模下的正确性和吞吐，观察线程组织、访存与同步对结果的影响。
 7. **判断 Graph 是否值得使用**：选取重复执行的短 kernel，比较普通 launch 与 `simpleCudaGraphs`；分别记录 CPU 提交开销和 GPU 执行时间。若工作负载没有明显提交开销，可将此项作为选做。
 
 `alignedTypes`、`histogram`、`tf32TensorCoreGemm` 和多 GPU/P2P 等均为选修：只有当自己的项目遇到相应的数据对齐、原子冲突、矩阵精度/吞吐或多卡通信问题时再学习，不必为了完成路线而逐一运行。
