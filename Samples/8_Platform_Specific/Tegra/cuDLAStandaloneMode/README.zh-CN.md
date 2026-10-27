@@ -1,0 +1,33 @@
+# cuDLAStandaloneMode - cuDLA 独立模式
+
+## 描述
+
+此示例演示 cuDLA 独立模式，在该模式下可以不使用 CUDA 对 DLA 进行编程。
+
+## 关键概念
+
+cuDLA、数据并行算法、图像处理
+
+## 支持的 SM 架构
+
+[SM 6.0 ](https://developer.nvidia.com/cuda-gpus)  [SM 6.1 ](https://developer.nvidia.com/cuda-gpus)  [SM 7.0 ](https://developer.nvidia.com/cuda-gpus)  [SM 7.2 ](https://developer.nvidia.com/cuda-gpus)  [SM 7.5 ](https://developer.nvidia.com/cuda-gpus)  [SM 8.0 ](https://developer.nvidia.com/cuda-gpus)  [SM 8.6 ](https://developer.nvidia.com/cuda-gpus)  [SM 8.7 ](https://developer.nvidia.com/cuda-gpus)  [SM 8.9 ](https://developer.nvidia.com/cuda-gpus)  [SM 9.0 ](https://developer.nvidia.com/cuda-gpus)
+
+## 支持的操作系统
+
+Linux, QNX
+
+## 支持的 CPU 架构
+
+aarch64
+
+## 涉及的 CUDA API
+
+## 构建/运行所需依赖
+[NVSCI](../../../README.md#nvsci)
+
+## 前置条件
+
+为对应平台下载并安装 [CUDA Toolkit 12.5](https://developer.nvidia.com/cuda-downloads)。
+确保已安装上文 [Dependencies]() 部分提到的依赖。
+
+## 参考资料（更多详情）

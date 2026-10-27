@@ -1,0 +1,36 @@
+# simpleCUFFT_callback - Simple CUFFT Callbacks
+
+## 描述
+
+使用 CUFFT。在此示例中，使用 CUFFT 将信号和滤波器转换到频域后相乘，再将信号转换回时域，以计算一维卷积。本示例与 Simple CUFFT 示例的区别在于：乘法步骤由 CUFFT 内核和用户提供的 CUFFT 回调例程完成，而不是通过单独的内核调用完成。
+
+## 核心概念
+
+图像处理, CUFFT 库
+
+## 支持的 SM 架构
+
+[SM 5.0 ](https://developer.nvidia.com/cuda-gpus)  [SM 5.3 ](https://developer.nvidia.com/cuda-gpus)  [SM 6.0 ](https://developer.nvidia.com/cuda-gpus)  [SM 6.1 ](https://developer.nvidia.com/cuda-gpus)  [SM 7.0 ](https://developer.nvidia.com/cuda-gpus)  [SM 7.2 ](https://developer.nvidia.com/cuda-gpus)  [SM 7.5 ](https://developer.nvidia.com/cuda-gpus)  [SM 8.0 ](https://developer.nvidia.com/cuda-gpus)  [SM 8.6 ](https://developer.nvidia.com/cuda-gpus)  [SM 8.7 ](https://developer.nvidia.com/cuda-gpus)  [SM 8.9 ](https://developer.nvidia.com/cuda-gpus)  [SM 9.0 ](https://developer.nvidia.com/cuda-gpus)
+
+## 支持的操作系统
+
+Linux
+
+## 支持的 CPU 架构
+
+x86_64、aarch64
+
+## 涉及的 CUDA API
+
+### [CUDA Runtime API](http://docs.nvidia.com/cuda/cuda-runtime-api/index.html)
+cudaMemcpy, cudaFree, cudaMemcpyFromSymbol, cudaGetDevice, cudaMalloc, cudaGetDeviceProperties
+
+## 构建/运行所需的依赖项
+[callback](../../../README.md#callback), [CUFFT](../../../README.md#cufft)
+
+## 前置条件
+
+下载并安装适用于相应平台的 [CUDA Toolkit 12.5](https://developer.nvidia.com/cuda-downloads) 。
+请确保已安装上文[依赖项]()部分中提到的依赖项。
+
+## 参考资料（更多详情）
