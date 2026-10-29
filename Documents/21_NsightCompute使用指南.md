@@ -160,6 +160,19 @@ ncu --query-metrics
 
 不要在第一次学习时使用 `--set full`。完整采集可能需要多次 Kernel 重放，开销较大，也会产生大量指标。
 
+### 4.1 `--set` 采集集合说明
+
+`--set` 选择 Nsight Compute 预定义的指标采集集合。可用 `ncu --list-sets` 查看当前安装版本的集合组成；其中 `Enabled` 列的 `yes` 表示默认集合，不代表一次命令同时启用了多个集合。若命令显式指定 `--set`，则按指定集合采集。集合内容和指标数量会随 Nsight Compute 版本变化，以下说明以本指南使用的 Nsight Compute 2025.1.1 输出为例。
+
+| 集合 | 适用场景 | 本机集合内容概况 |
+| --- | --- | --- |
+| `basic`（默认） | 快速查看 Kernel 基本信息、Occupancy 和吞吐摘要；适合作为第一次采集 | LaunchStats、Occupancy、SpeedOfLight、WorkloadDistribution；不含 Roofline 图表 |
+| `detailed` | 深入分析计算与内存工作负载、源码计数器，并查看 Roofline | 在基础信息外包含 ComputeWorkloadAnalysis、MemoryWorkloadAnalysis、SourceCounters 和 SpeedOfLight_RooflineChart 等 |
+| `roofline` | 专门分析不同精度和计算路径的 Roofline | 包含 SpeedOfLight_RooflineChart、单/双/半精度及 Tensor Roofline 区段；本机预计采集指标约 5260 项，成本较高 |
+| `full` | 全面排查性能问题，需要广泛指标时使用 | 包含指令统计、内存、调度、Warp 状态、PM Sampling、Roofline 等；本机预计约 5895 项，采集开销最大 |
+
+本机 `ncu --list-sets` 显示 `basic` 的 Enabled 为 `yes`，因此它是默认集合；`detailed`、`roofline`、`full` 的 Enabled 为 `no`。首次分析通常用 `basic`；需要 Roofline 时可用 `detailed` 或 `roofline`，避免为了 Roofline 直接采集 `full`。指标数量只是工具的估算值，不是硬件计数器数量，也不等同于 Kernel 数量。
+
 ## 6. 核心结果：先看哪些数据
 
 Nsight Compute 报告的具体页面名称可能随版本和界面语言变化，但通常先看以下几类结果。命令行也可以先输出摘要：
@@ -190,13 +203,19 @@ ncu --import ./transpose-naive.ncu-rep
 
 ### 6.2 Speed of Light 与 Roofline
 
-重点看：
+`--set basic` 包含 `SpeedOfLight` 区段，可查看 SM 和内存吞吐摘要，但不包含 Roofline 图表区段。因此，前面的基础采集命令不会生成 Roofline 数据。
 
-- SM Throughput：SM 计算管线的利用程度；
-- Memory Throughput：内存子系统的利用程度；
-- Compute/Memory Roofline：判断 Kernel 更接近计算受限还是内存受限。
+若要查看 Roofline，可用 `--set roofline` 重新采集，例如：
 
-如果 Memory Throughput 明显高而计算吞吐较低，通常说明访存是主要限制；如果计算吞吐接近设备能力而内存吞吐不高，可能更偏计算受限。Roofline 是判断方向，不应只凭单个百分比下结论。
+```bash
+ncu --kernel-name regex:transposeNaive \
+  --launch-count 1 --set roofline -o ./transpose-naive-roofline \
+  build/Samples/6_Performance/transpose/transpose -dimX=2048 -dimY=2048
+```
+
+本机 Nsight Compute 2025.1.1 的集合定义中，`roofline` 包含 `SpeedOfLight_RooflineChart` 及多个精度对应的 Roofline 区段；`full` 也包含 Roofline 图表，但还会采集大量其他指标，首次查看 Roofline 通常优先用 `--set roofline`。不同版本的集合内容可能变化，可通过 `ncu --list-sets` 查看当前工具的定义。
+
+Roofline 图用于判断 Kernel 更接近计算受限还是内存受限；结合 SM Throughput、Memory Throughput 和 Kernel Duration 解读，不要只凭单个百分比下结论。
 
 ### 6.3 Memory Workload Analysis
 
