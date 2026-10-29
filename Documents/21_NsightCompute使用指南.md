@@ -21,7 +21,7 @@
 | `transposeCoarseGrained`   |      否 | 只用于拆分分析完整转置的组成部分                                    |
 | `transposeFineGrained`     |      否 | 只用于拆分分析完整转置的组成部分                                    |
 
-本指南主要分析前三个完整转置 Kernel，并把 `transposeDiagonal` 作为扩展对照。`coarse-grained` 和 `fine-grained` 不是完整转置，不能仅凭吞吐量与完整 Kernel 直接比较。
+本指南主要分析前三个完整转置 Kernel，并把 `transposeDiagonal` 作为扩展对照。`coarse-grained` 和 `fine-grained` 不是完整转置，不能仅凭吞吐量与完整 Kernel 直接比较。它们与其他 Kernel 一样，使用 `16 × 16 = 256` 个线程组成一个 Block；区别在于每个线程在循环中只处理一个元素（因为 `TILE_DIM=16`、`BLOCK_ROWS=16`），而不是线程数量不同。
 
 ## 2. 开始前先建立基线
 
@@ -99,6 +99,7 @@ ncu \
 - `--kernel-name regex:transposeNaive`：只选择名称匹配的 Kernel；
 - `--launch-skip 1`：跳过第一次匹配的启动，减少预热或首次启动影响；如果当前版本或程序没有多余启动，可去掉此参数；
 - `--launch-count 1`：只采集一次匹配的 Kernel；
+- `--kernel-name regex:<函数名>`：`regex:` 表示使用正则表达式匹配，后面的内容不是 Kernel 函数名的一部分；
 - `--set basic`：采集基础指标集合，适合作为第一次练习；
 - `-o ./transpose-naive`：将报告写入当前仓库目录，生成 `transpose-naive.ncu-rep`；
 - 最后的内容是被分析程序及其参数。
@@ -149,11 +150,13 @@ transpose-coalesced.ncu-rep
 transpose-no-bank-conflicts.ncu-rep
 ```
 
-如果 `--kernel-name` 没有匹配到目标，先查看程序实际输出的 Kernel 名称，或使用：
+如果 `--kernel-name` 没有匹配到目标，应先查看程序实际输出的 Kernel 名称，或从源码和 Nsight Compute 的采集提示中确认名称。`--query-metrics` 不是用于列出 Kernel 名称的命令，它用于查询当前 Nsight Compute 支持的硬件性能指标及其名称，例如吞吐量、缓存、占用率和 Warp 指标。可以使用：
 
 ```bash
 ncu --query-metrics
 ```
+
+输出内容属于 Nsight Compute 工具支持的指标，不是当前应用实际执行的 Kernel 列表。`transpose` 程序输出中的 `transpose naive`、`transpose coalesced` 等是显示标签；采集时应使用源码中的实际函数名，例如 `transposeNaive`、`transposeCoalesced` 和 `transposeNoBankConflicts`。
 
 不要在第一次学习时使用 `--set full`。完整采集可能需要多次 Kernel 重放，开销较大，也会产生大量指标。
 
@@ -182,6 +185,8 @@ ncu --import ./transpose-naive.ncu-rep
 - 计算能力与 GPU 型号。
 
 `Kernel Duration` 是该次 Kernel 在 GPU 上的执行时间，和程序中 CUDA Event 的平均时间用途不同：前者用于工具采集的单次实例，后者通常是多次重复执行的平均值。
+
+程序输出的 `Workgroup = 256` 表示每个 Block 使用 256 个线程。本示例中 Block 配置为 `16 × 16`，因此 `16 × 16 = 256`；它不是 Grid 中 Block 的数量。`Grid` 的规模由矩阵尺寸和 tile 大小决定，本次 `2048 × 2048` 矩阵、`16 × 16` tile 对应 `128 × 128` 个 Block。
 
 ### 6.2 Speed of Light 与 Roofline
 
