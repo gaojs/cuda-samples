@@ -2,3 +2,6 @@ backup
 build
 .vs
 .clangd
+*.sqlite
+*.nsys-rep
+*.ncu-rep
